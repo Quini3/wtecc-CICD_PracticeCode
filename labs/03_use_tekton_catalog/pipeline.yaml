@@ -7,44 +7,47 @@ spec:
     - name: repo-url
     - name: branch
       default: "master"
+
+  tasks:
+    - name: init
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: cleanup
+
   tasks:
     - name: clone
+      workspaces:
+        - name: output
+          workspaces: pipeline-workspace
       taskRef:
-        name: checkout
+        name: git-clone
       params:
-      - name: repo-url
+      - name: url
         value: "$(params.repo-url)"
-      - name: branch
+      - name: revision
         value: "$(params.branch)"
 
-    - name: lint
-      taskRef:
-        name: echo
-      params:
-      - name: message
-        value: "Calling Flake8 linter..."
-      runAfter:
-        - clone
+   - name: tests
+       taskRef:
+         name: echo
+       params:
+       - name: message
+         value: "Running unit tests with PyUnit..."
+       runAfter:
+         - lint
 
-    - name: tests
-      taskRef:
+   - name: build
+       taskRef:
         name: echo
-      params:
-      - name: message
-        value: "Running unit tests with PyUnit..."
-      runAfter:
-        - lint
+        params:
+        - name: message
+          value: "Building image for $(params.repo-url) ..."
+       runAfter:
+         - tests
 
-    - name: build
-      taskRef:
-        name: echo
-      params:
-      - name: message
-        value: "Building image for $(params.repo-url) ..."
-      runAfter:
-        - tests
-
-    - name: deploy
+  - name: deploy
       taskRef:
         name: echo
       params:
